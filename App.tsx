@@ -115,26 +115,26 @@ const Navbar: React.FC<{ cartCount: number; user: AuthUser | null }> = ({
 
           {user ? (
             <div className="relative group">
-              <img
-                src={
-                  user.avatar ||
-                  `https://ui-avatars.com/api/?name=${user.name || "User"}`
-                }
-                className="w-9 h-9 rounded-full cursor-pointer"
-              />
-              <div className="absolute right-0 mt-2 w-48 bg-white shadow rounded opacity-0 group-hover:opacity-100 transition">
-                <div className="px-4 py-2 border-b">
-                  <p className="font-bold">{user.name || "User"}</p>
-                  <p className="text-xs text-slate-500">{user.email}</p>
-                </div>
-                <button
-                  onClick={handleLogout}
-                  className="w-full text-left px-4 py-2 text-red-600 hover:bg-red-50"
-                >
-                  Logout
-                </button>
-              </div>
-            </div>
+  {/* Avatar with initial */}
+  <div className="w-9 h-9 rounded-full bg-indigo-600 text-white flex items-center justify-center font-black uppercase cursor-pointer">
+    {(user.name?.charAt(0) || "U")}
+  </div>
+
+  {/* Dropdown */}
+  <div className="absolute right-0 mt-2 w-48 bg-white shadow rounded opacity-0 group-hover:opacity-100 transition">
+    <div className="px-4 py-2 border-b">
+      <p className="font-bold">{user.name || "User"}</p>
+      <p className="text-xs text-slate-500">{user.email}</p>
+    </div>
+    <button
+      onClick={handleLogout}
+      className="w-full text-left px-4 py-2 text-red-600 hover:bg-red-50"
+    >
+      Logout
+    </button>
+  </div>
+</div>
+
           ) : (
             <Link to="/login">
               <UserIcon />
