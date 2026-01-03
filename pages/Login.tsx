@@ -64,8 +64,11 @@ export default function Login() {
   ========================== */
   const handleLogin = async () => {
     setError("");
+    setSuccess("");
 
-    if (!isValidEmail(email)) {
+    const cleanedEmail = email.trim();
+
+    if (!isValidEmail(cleanedEmail)) {
       setError("Please enter a valid email");
       return;
     }
@@ -80,7 +83,7 @@ export default function Login() {
       const res = await fetch("http://localhost:5000/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email: cleanedEmail, password }),
       });
 
       const data = await res.json();
@@ -102,13 +105,16 @@ export default function Login() {
   ========================== */
   const handleSignup = async () => {
     setError("");
+    setSuccess("");
+
+    const cleanedEmail = email.trim();
 
     if (!name.trim()) {
       setError("Name is required");
       return;
     }
 
-    if (!isValidEmail(email)) {
+    if (!isValidEmail(cleanedEmail)) {
       setError("Please enter a valid email");
       return;
     }
@@ -118,7 +124,7 @@ export default function Login() {
       const res = await fetch("http://localhost:5000/api/auth/signup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email, password }),
+        body: JSON.stringify({ name: name.trim(), email: cleanedEmail, password }),
       });
 
       const data = await res.json();
@@ -142,7 +148,9 @@ export default function Login() {
     setError("");
     setSuccess("");
 
-    if (!isValidEmail(email)) {
+    const cleanedEmail = email.trim();
+
+    if (!isValidEmail(cleanedEmail)) {
       setError("Enter a valid email");
       return;
     }
@@ -154,7 +162,7 @@ export default function Login() {
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email }),
+          body: JSON.stringify({ email: cleanedEmail }),
         }
       );
 
@@ -164,8 +172,7 @@ export default function Login() {
         return;
       }
 
-      setSuccess("Reset link generated (check console)");
-      console.log("RESET LINK:", data.resetUrl);
+      setSuccess("Reset link sent to your email");
     } catch {
       setError("Server error");
     } finally {
@@ -280,7 +287,11 @@ export default function Login() {
 
           <input
             value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            onChange={(e) => {
+              setEmail(e.target.value);
+              setError("");
+              setSuccess("");
+            }}
             placeholder="Email"
             className="w-full px-5 py-3 rounded-2xl bg-slate-50 border-2"
           />

@@ -20,6 +20,8 @@ import Login from "./pages/Login";
 import CustomOrder from "./pages/CustomOrder";
 import Contact from "./pages/Contact";
 import About from "./pages/About";
+import ResetPassword from "./pages/ResetPassword";
+
 
 /* =======================
    AUTH USER (Mongo-based)
@@ -223,6 +225,9 @@ export default function App() {
           <Route path="/custom-order" element={<CustomOrder addToCart={addToCart} />} />
           <Route path="/contact" element={<Contact />} />
           <Route path="/about" element={<About />} />
+
+          <Route path="/reset-password/:token" element={<ResetPassword />} />
+
         </Routes>
       </main>
 
