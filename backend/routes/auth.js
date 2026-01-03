@@ -92,4 +92,46 @@ router.post("/login", async (req, res) => {
   }
 });
 
+/* =========================
+   GOOGLE LOGIN
+========================= */
+router.post("/google", async (req, res) => {
+  try {
+    const { name, email, avatar } = req.body;
+
+    let user = await User.findOne({ email });
+
+    if (!user) {
+      user = await User.create({
+        name: name && name.trim()
+          ? name.trim()
+          : email.split("@")[0],
+        email,
+        password: "google-auth",
+        provider: "google",
+        avatar,
+      });
+    }
+
+    const token = jwt.sign(
+      { id: user._id },
+      process.env.JWT_SECRET,
+      { expiresIn: "7d" }
+    );
+
+    res.json({
+      token,
+      user: {
+        _id: user._id,
+        name: user.name,
+        email: user.email,
+        avatar: user.avatar,
+      },
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Google auth failed" });
+  }
+});
+
 module.exports = router;

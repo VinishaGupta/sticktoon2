@@ -1,5 +1,7 @@
 import React, { useState } from "react";
 import { Eye, EyeOff, Sparkle, Loader2 } from "lucide-react";
+import { useGoogleLogin } from "@react-oauth/google";
+
 
 /* =========================
    VALIDATION HELPERS
@@ -138,13 +140,52 @@ const saveAuth = (data: any) => {
   /* =========================
      GOOGLE (UI ONLY)
   ========================== */
-  const handleGoogleLogin = () => {
-    setIsGoogleLoading(true);
-    setTimeout(() => {
+  const googleLogin = useGoogleLogin({
+  onSuccess: async (tokenResponse) => {
+    try {
+      setIsGoogleLoading(true);
+
+      // 🔹 get user info from Google
+      const res = await fetch(
+        "https://www.googleapis.com/oauth2/v3/userinfo",
+        {
+          headers: {
+            Authorization: `Bearer ${tokenResponse.access_token}`,
+          },
+        }
+      );
+
+      const googleUser = await res.json();
+
+      // 🔹 send to backend
+      const backendRes = await fetch(
+        "http://localhost:5000/api/auth/google",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name: googleUser.name,
+            email: googleUser.email,
+            avatar: googleUser.picture,
+          }),
+        }
+      );
+
+      const data = await backendRes.json();
+      if (!backendRes.ok) {
+        setError(data.message || "Google login failed");
+        return;
+      }
+
+      saveAuth(data);
+    } catch {
+      setError("Google login failed");
+    } finally {
       setIsGoogleLoading(false);
-      alert("Google login will be added later 🚀");
-    }, 1200);
-  };
+    }
+  },
+});
+
 
   return (
     <div className="min-h-[calc(100vh-64px)] bg-[#F8FAFC] flex items-center justify-center px-6">
@@ -271,14 +312,13 @@ const saveAuth = (data: any) => {
           </div>
         </div>
 
-        {/* Google */}
         <button
-          onClick={handleGoogleLogin}
-          disabled={isGoogleLoading}
-          className="w-full py-4 border-2 border-slate-100 rounded-2xl font-black text-xs uppercase"
-        >
-          {isGoogleLoading ? "Loading..." : "Continue with Google"}
-        </button>
+  onClick={() => googleLogin()}
+  disabled={isGoogleLoading}
+  className="w-full py-4 border-2 border-slate-100 rounded-2xl font-black text-xs uppercase"
+>
+  {isGoogleLoading ? "Loading..." : "Continue with Google"}
+</button>
       </div>
     </div>
   );
