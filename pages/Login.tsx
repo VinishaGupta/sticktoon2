@@ -1,15 +1,145 @@
 import React, { useState } from "react";
-import { Eye, EyeOff, Sparkle, Chrome, Loader2 } from "lucide-react";
+import { Eye, EyeOff, Sparkle, Loader2 } from "lucide-react";
+
+/* =========================
+   VALIDATION HELPERS
+========================== */
+const isValidEmail = (email: string) =>
+  /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+
+const getPasswordStrength = (password: string) => {
+  if (password.length < 6) return "weak";
+  if (
+    password.length >= 8 &&
+    /[A-Z]/.test(password) &&
+    /[0-9]/.test(password) &&
+    /[^A-Za-z0-9]/.test(password)
+  )
+    return "strong";
+  return "medium";
+};
 
 export default function Login() {
   const [isLogin, setIsLogin] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
 
-  // UI-only placeholder
+  // form state
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+
+  // ui state
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  const passwordStrength = getPasswordStrength(password);
+
+  /* =========================
+     LOGIN
+  ========================== */
+  const handleLogin = async () => {
+    setError("");
+
+    if (!isValidEmail(email)) {
+      setError("Please enter a valid email address");
+      return;
+    }
+
+    if (!password) {
+      setError("Password is required");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const res = await fetch("http://localhost:5000/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.message || "Login failed");
+        return;
+      }
+
+      saveAuth(data);
+    } catch {
+      setError("Server error. Try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  /* =========================
+     SIGNUP (NO PASSWORD BLOCKING)
+  ========================== */
+  const handleSignup = async () => {
+    setError("");
+
+    if (!name.trim()) {
+      setError("Name is required");
+      return;
+    }
+
+    if (!isValidEmail(email)) {
+      setError("Please enter a valid email address");
+      return;
+    }
+
+    // ❗ Password strength is informational only
+    // ❗ No blocking for weak / medium passwords
+
+    setLoading(true);
+    try {
+      const res = await fetch("http://localhost:5000/api/auth/signup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, email, password }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.message || "Signup failed");
+        return;
+      }
+
+      // ✅ directly save auth (no second login call)
+      saveAuth(data);
+    } catch {
+      setError("Server error. Try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  /* =========================
+     SAVE AUTH
+  ========================== */
+const saveAuth = (data: any) => {
+  const name = data.user.name?.trim() || "User";
+
+  localStorage.setItem("token", data.token);
+  localStorage.setItem(
+    "user",
+    JSON.stringify({
+      id: data.user._id,
+      name,
+      email: data.user.email,
+      avatar: name.charAt(0).toUpperCase(), // ✅ INITIAL
+    })
+  );
+
+  window.location.href = "/";
+};
+
+  /* =========================
+     GOOGLE (UI ONLY)
+  ========================== */
   const handleGoogleLogin = () => {
     setIsGoogleLoading(true);
-
     setTimeout(() => {
       setIsGoogleLoading(false);
       alert("Google login will be added later 🚀");
@@ -19,18 +149,15 @@ export default function Login() {
   return (
     <div className="min-h-[calc(100vh-64px)] bg-[#F8FAFC] flex items-center justify-center px-6">
       <div className="max-w-[360px] w-full bg-white rounded-[1.6rem] px-6 py-6 shadow-lg border border-slate-100">
-        
         {/* Header */}
         <div className="text-center mb-4">
           <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-white mx-auto mb-4 shadow-xl shadow-blue-100">
             <Sparkle className="w-6 h-6 fill-white" />
           </div>
-
-          <h2 className="text-xl font-black text-slate-900 tracking-tight mb-1">
-            {isLogin ? "Welcome Back" : "Join the Crew"}
+          <h2 className="text-xl font-black text-slate-900">
+            {isLogin ? "Welcome Back" : "Create Account"}
           </h2>
-
-          <p className="text-slate-400 font-bold text-xs uppercase tracking-widest">
+          <p className="text-slate-400 text-xs font-bold uppercase tracking-widest">
             {isLogin ? "Access your vault" : "Start your collection"}
           </p>
         </div>
@@ -38,9 +165,13 @@ export default function Login() {
         {/* Toggle */}
         <div className="relative flex p-1.5 bg-slate-100 rounded-2xl mb-6">
           <div
-            className={`absolute top-1.5 left-1.5 w-[calc(50%-6px)] h-[calc(100%-12px)] bg-white rounded-xl shadow-sm transition-all duration-300 ${
-              !isLogin ? "translate-x-full" : ""
-            }`}
+            className={`absolute top-1.5 left-1.5
+              w-[calc(50%-6px)]
+              h-[calc(100%-12px)]
+              bg-white rounded-xl shadow-sm
+              transition-transform duration-300 z-0
+              ${!isLogin ? "translate-x-[100%]" : "translate-x-0"}
+            `}
           />
           <button
             onClick={() => setIsLogin(true)}
@@ -62,72 +193,91 @@ export default function Login() {
 
         {/* Form */}
         <div className="space-y-4">
-          <div>
-            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">
-              Email Address
-            </label>
+          {!isLogin && (
             <input
-              type="email"
-              placeholder="name@example.com"
-              className="w-full px-5 py-3 bg-slate-50 border-2 border-slate-50 rounded-2xl focus:border-blue-400 focus:bg-white outline-none font-bold text-slate-700 transition-all"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Full name"
+              className="w-full px-5 py-3 rounded-2xl bg-slate-50 border-2 border-slate-50"
             />
-          </div>
-
-          <div>
-            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">
-              Password
-            </label>
-            <div className="relative">
-              <input
-                type={showPassword ? "text" : "password"}
-                placeholder="••••••••"
-                className="w-full px-5 py-3 bg-slate-50 border-2 border-slate-50 rounded-2xl focus:border-blue-400 focus:bg-white outline-none font-bold text-slate-700 transition-all"
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-300 hover:text-blue-500"
-              >
-                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-              </button>
-            </div>
-          </div>
-
-          {isLogin && (
-            <div className="text-right">
-              <button className="text-[10px] font-black text-blue-600 uppercase tracking-widest hover:text-blue-700">
-                Forgot Password?
-              </button>
-            </div>
           )}
 
-          <button className="w-full py-4 bg-slate-900 text-white font-black rounded-2xl text-xs uppercase tracking-[0.2em] hover:bg-blue-600 transition-all active:scale-95 shadow-lg">
-            {isLogin ? "Enter The Hub" : "Create Account"}
+          <input
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="Email address"
+            className={`w-full px-5 py-3 rounded-2xl bg-slate-50 border-2 ${
+              email && !isValidEmail(email)
+                ? "border-red-400"
+                : "border-slate-50"
+            }`}
+          />
+
+          <div className="relative">
+            <input
+              type={showPassword ? "text" : "password"}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Password"
+              className="w-full px-5 py-3 rounded-2xl bg-slate-50 border-2 border-slate-50"
+            />
+            <button
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-4 top-1/2 -translate-y-1/2"
+            >
+              {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+            </button>
+          </div>
+
+          {/* Password strength (INFO ONLY) */}
+          {!isLogin && password && (
+            <p
+              className={`text-xs font-bold ${
+                passwordStrength === "strong"
+                  ? "text-green-600"
+                  : passwordStrength === "medium"
+                  ? "text-yellow-600"
+                  : "text-red-600"
+              }`}
+            >
+              Password strength: {passwordStrength}
+            </p>
+          )}
+
+          {error && (
+            <p className="text-xs text-red-600 text-center font-bold">
+              {error}
+            </p>
+          )}
+
+          <button
+            onClick={isLogin ? handleLogin : handleSignup}
+            disabled={loading}
+            className="w-full py-4 bg-slate-900 text-white rounded-2xl font-black text-xs uppercase tracking-widest disabled:opacity-60"
+          >
+            {loading
+              ? "Please wait..."
+              : isLogin
+              ? "Enter The Hub"
+              : "Create Account"}
           </button>
         </div>
 
         {/* Divider */}
         <div className="relative my-5">
-          <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-slate-100"></div>
-          </div>
-          <div className="relative flex justify-center text-[10px] font-black tracking-widest text-slate-300">
-            <span className="bg-white px-4">OR CONTINUE WITH</span>
+          <div className="absolute inset-0 border-t border-slate-100" />
+          <div className="relative text-center text-[10px] font-black text-slate-300 bg-white px-4 w-fit mx-auto">
+            OR CONTINUE WITH
           </div>
         </div>
 
-        {/* Google Button */}
+        {/* Google */}
         <button
           onClick={handleGoogleLogin}
           disabled={isGoogleLoading}
-          className="w-full py-4 border-2 border-slate-100 rounded-2xl flex items-center justify-center gap-3 font-black text-xs uppercase tracking-widest text-slate-600 hover:bg-slate-50 transition-all disabled:opacity-50"
+          className="w-full py-4 border-2 border-slate-100 rounded-2xl font-black text-xs uppercase"
         >
-          {isGoogleLoading ? (
-            <Loader2 className="w-5 h-5 animate-spin" />
-          ) : (
-            <Chrome className="w-5 h-5" />
-          )}
-          Continue with Google
+          {isGoogleLoading ? "Loading..." : "Continue with Google"}
         </button>
       </div>
     </div>
