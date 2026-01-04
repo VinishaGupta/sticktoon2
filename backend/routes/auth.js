@@ -174,14 +174,88 @@ router.post("/forgot-password", async (req, res) => {
       to: user.email,
       subject: "Reset your StickToon password",
       html: `
-        <h2>Password Reset</h2>
-        <p>
-          <a href="${resetUrl}">
-            Click here to reset your password
-          </a>
-        </p>
-        <p>This link expires in 15 minutes.</p>
-      `,
+<!DOCTYPE html>
+<html>
+  <body style="margin:0;padding:0;background:#f4f6fb;font-family:Arial,Helvetica,sans-serif;">
+    <table width="100%" cellpadding="0" cellspacing="0">
+      <tr>
+        <td align="center" style="padding:40px 10px;">
+          <table width="100%" max-width="480" style="background:#ffffff;border-radius:16px;padding:32px;">
+            
+            <!-- Logo -->
+            <tr>
+              <td align="center" style="padding-bottom:20px;">
+                <div style="
+                  width:48px;
+                  height:48px;
+                  background:#2563eb;
+                  border-radius:50%;
+                  color:#fff;
+                  font-size:28px;
+                  line-height:48px;
+                  font-weight:700;
+                ">+</div>
+              </td>
+            </tr>
+
+            <!-- Title -->
+            <tr>
+              <td align="center">
+                <h2 style="margin:0 0 12px;color:#0f172a;">
+                  Reset your StickToon password
+                </h2>
+              </td>
+            </tr>
+
+            <!-- Text -->
+            <tr>
+              <td align="center" style="color:#475569;font-size:14px;line-height:22px;">
+                You requested a password reset. Click the button below to set a new password.
+              </td>
+            </tr>
+
+            <!-- Button -->
+            <tr>
+              <td align="center" style="padding:24px 0;">
+                <a href="${resetUrl}"
+                  style="
+                    display:inline-block;
+                    padding:14px 28px;
+                    background:#0f172a;
+                    color:#ffffff;
+                    text-decoration:none;
+                    border-radius:12px;
+                    font-weight:700;
+                    font-size:14px;
+                  ">
+                  Reset Password
+                </a>
+              </td>
+            </tr>
+
+            <!-- Expiry -->
+            <tr>
+              <td align="center" style="font-size:12px;color:#64748b;">
+                This link expires in 15 minutes.
+              </td>
+            </tr>
+
+            <!-- Footer -->
+            <tr>
+              <td align="center" style="padding-top:28px;font-size:11px;color:#94a3b8;">
+                If you didn’t request this, you can safely ignore this email.<br />
+                © ${new Date().getFullYear()} StickToon
+              </td>
+            </tr>
+
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>
+`,
+
     });
 
     console.log("✅ Reset email sent to:", user.email);
